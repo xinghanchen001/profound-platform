@@ -278,7 +278,7 @@ export const promptService = {
 
       if (error) throw error
 
-      const prompts = data?.map(item => item.prompts).filter(Boolean) as Prompt[] || []
+      const prompts = data?.map((item: { prompts: Prompt }) => item.prompts).filter(Boolean) as Prompt[] || []
 
       return { data: prompts, error: null }
     } catch (error) {
@@ -328,10 +328,10 @@ export const promptService = {
       const executions = data || []
       const stats = {
         total_executions: executions.length,
-        successful_executions: executions.filter(e => e.status === 'completed').length,
-        failed_executions: executions.filter(e => e.status === 'failed').length,
+        successful_executions: executions.filter((e: any) => e.status === 'completed').length,
+        failed_executions: executions.filter((e: any) => e.status === 'failed').length,
         last_execution: executions.length > 0 
-          ? executions.sort((a, b) => new Date(b.executed_at).getTime() - new Date(a.executed_at).getTime())[0].executed_at
+          ? executions.sort((a: any, b: any) => new Date(b.executed_at).getTime() - new Date(a.executed_at).getTime())[0].executed_at
           : undefined
       }
 
