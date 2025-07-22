@@ -84,7 +84,7 @@ export interface ExecutionResult {
   sentiment?: 'positive' | 'negative' | 'neutral'
   response_text?: string
   response_position?: number
-  citations?: any
+  citations?: Record<string, unknown>
   created_at: string
 }
 
