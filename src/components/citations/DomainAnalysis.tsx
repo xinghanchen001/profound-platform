@@ -211,7 +211,7 @@ export function DomainAnalysis() {
                 className="pl-8"
               />
             </div>
-            <Select value={filterType} onValueChange={(value: any) => setFilterType(value)}>
+            <Select value={filterType} onValueChange={(value: 'all' | 'owned' | 'external') => setFilterType(value)}>
               <SelectTrigger className="w-40">
                 <SelectValue />
               </SelectTrigger>

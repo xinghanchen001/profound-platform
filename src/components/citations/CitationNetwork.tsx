@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useState, useEffect } from 'react'
+import React, { useState, useEffect, useCallback } from 'react'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
@@ -9,11 +9,8 @@ import {
   Network, 
   Download,
   RotateCcw,
-  ZoomIn,
-  ZoomOut,
   Play,
-  Pause,
-  Settings
+  Pause
 } from 'lucide-react'
 import { citationService } from '@/lib/database/citations'
 import { useAuth } from '@/contexts/AuthContext'
@@ -49,16 +46,16 @@ export function CitationNetwork() {
     if (organization) {
       loadNetworkData()
     }
-  }, [organization, filterType])
+  }, [organization, filterType, loadNetworkData])
 
-  const loadNetworkData = async () => {
+  const loadNetworkData = useCallback(async () => {
     if (!organization) return
 
     try {
       setLoading(true)
       setError(null)
 
-      const filters = filterType !== 'all' ? { citation_type: filterType as any } : undefined
+      const filters = filterType !== 'all' ? { citation_type: filterType as 'owned' | 'earned' | 'competitor' | 'social' } : undefined
       const result = await citationService.getCitationNetworkData(organization.id, filters)
 
       if (result.error) {
@@ -76,12 +73,12 @@ export function CitationNetwork() {
           links: result.data.links
         })
       }
-    } catch (err) {
+    } catch {
       setError('Failed to load network data')
     } finally {
       setLoading(false)
     }
-  }
+  }, [organization, filterType])
 
   const getNodeColor = (type: string) => {
     switch (type) {
@@ -162,7 +159,7 @@ export function CitationNetwork() {
         <div className="flex items-center gap-2">
           <Select 
             value={filterType} 
-            onValueChange={(value: any) => setFilterType(value)}
+            onValueChange={(value: 'all' | 'owned' | 'earned' | 'competitor' | 'social') => setFilterType(value)}
           >
             <SelectTrigger className="w-40">
               <SelectValue />

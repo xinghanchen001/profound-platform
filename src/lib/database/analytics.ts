@@ -129,6 +129,7 @@ export const analyticsService = {
         group.executions += executions.length
         group.successfulExecutions += successfulExecutions.length
         totalExecutions += executions.length
+        totalSuccessfulExecutions += successfulExecutions.length
 
         // Find latest execution date
         executions.forEach(ex => {

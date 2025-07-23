@@ -202,7 +202,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       return { error: response.error }
     } catch (err) {
       console.error('SignIn exception:', err)
-      return { error: err as any }
+      return { error: err as AuthError }
     }
   }
 

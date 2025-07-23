@@ -52,7 +52,7 @@ export function PageAnalysis() {
       setLoading(true)
       setError(null)
 
-      const filters = filterType !== 'all' ? { citation_type: filterType as any } : undefined
+      const filters = filterType !== 'all' ? { citation_type: filterType as 'owned' | 'earned' | 'competitor' | 'social' } : undefined
       const pagination = {
         page: currentPage,
         per_page: itemsPerPage,
@@ -191,7 +191,7 @@ export function PageAnalysis() {
             </div>
             <Select 
               value={filterType} 
-              onValueChange={(value: any) => {
+              onValueChange={(value: 'all' | 'owned' | 'earned' | 'competitor' | 'social') => {
                 setFilterType(value)
                 setCurrentPage(1)
               }}

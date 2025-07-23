@@ -282,7 +282,7 @@ export const citationService = {
         page_title: string
         domain: string
         citation_type: string
-        citations: any[]
+        citations: unknown[]
         platforms: Set<string>
         last_cited: string
       }>()
@@ -319,7 +319,7 @@ export const citationService = {
           domain: stats.domain,
           citation_count: stats.citations.length,
           platforms: Array.from(stats.platforms),
-          citation_type: stats.citation_type as any,
+          citation_type: stats.citation_type as 'owned' | 'earned' | 'competitor' | 'social',
           last_cited: stats.last_cited
         }))
         .sort((a, b) => b.citation_count - a.citation_count)
