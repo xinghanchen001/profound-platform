@@ -328,10 +328,10 @@ export const promptService = {
       const executions = data || []
       const stats = {
         total_executions: executions.length,
-        successful_executions: executions.filter((e: any) => e.status === 'completed').length,
-        failed_executions: executions.filter((e: any) => e.status === 'failed').length,
+        successful_executions: executions.filter((e: { status: string }) => e.status === 'completed').length,
+        failed_executions: executions.filter((e: { status: string }) => e.status === 'failed').length,
         last_execution: executions.length > 0 
-          ? executions.sort((a: any, b: any) => new Date(b.executed_at).getTime() - new Date(a.executed_at).getTime())[0].executed_at
+          ? executions.sort((a: { executed_at: string }, b: { executed_at: string }) => new Date(b.executed_at).getTime() - new Date(a.executed_at).getTime())[0].executed_at
           : undefined
       }
 
