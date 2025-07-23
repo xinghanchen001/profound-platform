@@ -121,13 +121,30 @@ export function usePermissions() {
           .eq('organization_id', organization.id)
           .single()
 
-        if (error) throw error
+        if (error) {
+          // Handle case where user doesn't have an organization relationship
+          if (error.code === 'PGRST116') {
+            console.warn(`User ${user.email} is not associated with organization ${organization.name}. Defaulting to viewer role.`)
+            setUserRole('viewer')
+            setPermissions(getRolePermissions('viewer'))
+          } else {
+            console.error('Error fetching user role:', {
+              code: error.code,
+              message: error.message,
+              details: error.details,
+              hint: error.hint
+            })
+            setUserRole(null)
+            setPermissions(getRolePermissions('viewer'))
+          }
+          return
+        }
 
         const role = data.role as Role
         setUserRole(role)
         setPermissions(getRolePermissions(role))
       } catch (error) {
-        console.error('Error fetching user role:', error)
+        console.error('Unexpected error fetching user role:', error)
         setUserRole(null)
         setPermissions(getRolePermissions('viewer'))
       } finally {

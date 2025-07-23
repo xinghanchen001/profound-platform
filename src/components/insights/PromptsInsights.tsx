@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useState } from 'react'
+import React, { useState, useEffect, useCallback } from 'react'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -9,96 +9,85 @@ import { Badge } from '@/components/ui/badge'
 import { Progress } from '@/components/ui/progress'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible'
-import { Search, ChevronDown, ChevronRight, Play, Calendar, BarChart3, Target } from 'lucide-react'
+import { Search, ChevronDown, ChevronRight, Play, Calendar, BarChart3, Target, MoreHorizontal, Edit, Trash2 } from 'lucide-react'
+import { analyticsService, PromptAnalyticsGroup, PromptAnalyticsStats } from '@/lib/database/analytics'
+import { promptService } from '@/lib/database/prompts'
+import { useAuth } from '@/contexts/AuthContext'
+import { 
+  DropdownMenu, 
+  DropdownMenuContent, 
+  DropdownMenuItem, 
+  DropdownMenuTrigger 
+} from '@/components/ui/dropdown-menu'
+import { 
+  Dialog, 
+  DialogContent, 
+  DialogDescription, 
+  DialogHeader, 
+  DialogTitle 
+} from '@/components/ui/dialog'
+import { 
+  AlertDialog, 
+  AlertDialogAction, 
+  AlertDialogCancel, 
+  AlertDialogContent, 
+  AlertDialogDescription, 
+  AlertDialogFooter, 
+  AlertDialogHeader, 
+  AlertDialogTitle 
+} from '@/components/ui/alert-dialog'
+import { PromptForm } from '@/components/prompts/PromptForm'
+import type { Prompt } from '@/types/database'
 
-const promptGroups = [
-  {
-    id: '1',
-    title: 'Financial Services',
-    topic: 'Finance',
-    promptCount: 12,
-    visibility: 78.5,
-    trend: 5.2,
-    rank: 1,
-    shareOfVoice: 28.4,
-    executions: 245,
-    lastRun: '2024-01-21T10:30:00Z',
-    prompts: [
-      {
-        id: '1a',
-        text: 'What are the best financial services for small businesses?',
-        mentions: true,
-        platforms: ['ChatGPT', 'Perplexity', 'Google AI'],
-        response: 'When it comes to financial services for small businesses, several options stand out...',
-        region: 'US',
-      },
-      {
-        id: '1b',
-        text: 'How do I choose the right business loan provider?',
-        mentions: false,
-        platforms: [],
-        response: null,
-        region: 'US',
-      },
-    ]
-  },
-  {
-    id: '2',
-    title: 'Investment Advice',
-    topic: 'Investment',
-    promptCount: 8,
-    visibility: 65.2,
-    trend: -2.1,
-    rank: 3,
-    shareOfVoice: 22.1,
-    executions: 189,
-    lastRun: '2024-01-21T09:15:00Z',
-    prompts: [
-      {
-        id: '2a',
-        text: 'What investment strategies work best for retirement planning?',
-        mentions: true,
-        platforms: ['ChatGPT', 'Copilot'],
-        response: 'Retirement planning requires a diversified approach to investments...',
-        region: 'US',
-      }
-    ]
-  },
-  {
-    id: '3',
-    title: 'Credit Management',
-    topic: 'Credit',
-    promptCount: 15,
-    visibility: 82.1,
-    trend: 8.7,
-    rank: 2,
-    shareOfVoice: 31.2,
-    executions: 312,
-    lastRun: '2024-01-21T11:45:00Z',
-    prompts: [
-      {
-        id: '3a',
-        text: 'How can I improve my credit score quickly?',
-        mentions: true,
-        platforms: ['ChatGPT', 'Perplexity', 'Google AI', 'Copilot'],
-        response: 'Improving your credit score requires consistent effort...',
-        region: 'US',
-      }
-    ]
-  },
-]
 
 const platformIcons = {
   'ChatGPT': '🤖',
   'Perplexity': '🔍',
-  'Google AI': '🌟',
-  'Copilot': '💼',
+  'Google AI Overviews': '🌟',
+  'Microsoft Copilot': '💼',
 }
 
 export function PromptsInsights() {
+  const { organization } = useAuth()
   const [searchTerm, setSearchTerm] = useState('')
   const [selectedTopic, setSelectedTopic] = useState('all')
-  const [expandedGroups, setExpandedGroups] = useState<string[]>(['1'])
+  const [expandedGroups, setExpandedGroups] = useState<string[]>([])
+  const [stats, setStats] = useState<PromptAnalyticsStats | null>(null)
+  const [promptGroups, setPromptGroups] = useState<PromptAnalyticsGroup[]>([])
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
+  
+  // Edit/Delete modal states
+  const [editingPrompt, setEditingPrompt] = useState<Prompt | null>(null)
+  const [deletingPrompt, setDeletingPrompt] = useState<{ id: string; text: string } | null>(null)
+  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false)
+  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false)
+  const [actionLoading, setActionLoading] = useState(false)
+
+  const fetchAnalytics = useCallback(async () => {
+    if (!organization?.id) return
+    
+    try {
+      setLoading(true)
+      setError(null)
+      const data = await analyticsService.getPromptAnalytics(organization.id)
+      setStats(data.stats)
+      setPromptGroups(data.groups)
+      // Auto-expand first group if any
+      if (data.groups.length > 0) {
+        setExpandedGroups([data.groups[0].id])
+      }
+    } catch (err) {
+      setError('Failed to load analytics data')
+      console.error('Analytics error:', err)
+    } finally {
+      setLoading(false)
+    }
+  }, [organization?.id])
+
+  useEffect(() => {
+    fetchAnalytics()
+  }, [fetchAnalytics])
 
   const toggleGroup = (groupId: string) => {
     setExpandedGroups(prev => 
@@ -110,9 +99,111 @@ export function PromptsInsights() {
 
   const filteredGroups = promptGroups.filter(group => {
     const matchesSearch = group.title.toLowerCase().includes(searchTerm.toLowerCase())
-    const matchesTopic = selectedTopic === 'all' || group.topic.toLowerCase() === selectedTopic
+    const matchesTopic = selectedTopic === 'all' || group.topic.toLowerCase() === selectedTopic.toLowerCase()
     return matchesSearch && matchesTopic
   })
+
+  const uniqueTopics = [...new Set(promptGroups.map(group => group.topic.toLowerCase()))]
+
+  // Handler functions for edit/delete operations
+  const handleEditPrompt = async (promptId: string) => {
+    try {
+      setActionLoading(true)
+      const result = await promptService.getById(promptId)
+      if (result.data) {
+        setEditingPrompt(result.data)
+        setIsEditDialogOpen(true)
+      } else {
+        setError(result.error || 'Failed to load prompt')
+      }
+    } catch (err) {
+      setError('Failed to load prompt for editing')
+    } finally {
+      setActionLoading(false)
+    }
+  }
+
+  const handleDeletePrompt = (promptId: string, promptText: string) => {
+    setDeletingPrompt({ id: promptId, text: promptText })
+    setIsDeleteDialogOpen(true)
+  }
+
+  const confirmDeletePrompt = async () => {
+    if (!deletingPrompt) return
+
+    try {
+      setActionLoading(true)
+      const result = await promptService.delete(deletingPrompt.id)
+      if (result.error) {
+        setError(result.error)
+      } else {
+        // Refresh the analytics data
+        await fetchAnalytics()
+        setIsDeleteDialogOpen(false)
+        setDeletingPrompt(null)
+      }
+    } catch (err) {
+      setError('Failed to delete prompt')
+    } finally {
+      setActionLoading(false)
+    }
+  }
+
+  const handleEditSuccess = async () => {
+    setIsEditDialogOpen(false)
+    setEditingPrompt(null)
+    // Refresh the analytics data
+    await fetchAnalytics()
+  }
+
+  const handleEditCancel = () => {
+    setIsEditDialogOpen(false)
+    setEditingPrompt(null)
+  }
+
+  if (loading) {
+    return (
+      <div className="space-y-6">
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+          {[...Array(4)].map((_, i) => (
+            <Card key={i}>
+              <CardContent className="p-6">
+                <div className="animate-pulse space-y-2">
+                  <div className="h-4 bg-muted rounded w-3/4"></div>
+                  <div className="h-8 bg-muted rounded w-1/2"></div>
+                </div>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+        <Card>
+          <CardContent className="p-6">
+            <div className="animate-pulse space-y-4">
+              <div className="h-6 bg-muted rounded w-1/4"></div>
+              <div className="h-32 bg-muted rounded"></div>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+    )
+  }
+
+  if (error) {
+    return (
+      <Card>
+        <CardContent className="p-6 text-center">
+          <p className="text-destructive">{error}</p>
+          <Button 
+            variant="outline" 
+            onClick={() => window.location.reload()}
+            className="mt-4"
+          >
+            Retry
+          </Button>
+        </CardContent>
+      </Card>
+    )
+  }
 
   return (
     <div className="space-y-6">
@@ -124,7 +215,7 @@ export function PromptsInsights() {
             <Target className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">35</div>
+            <div className="text-2xl font-bold">{stats?.totalPrompts || 0}</div>
             <p className="text-xs text-muted-foreground">Across all topics</p>
           </CardContent>
         </Card>
@@ -135,7 +226,7 @@ export function PromptsInsights() {
             <Play className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">746</div>
+            <div className="text-2xl font-bold">{stats?.totalExecutions || 0}</div>
             <p className="text-xs text-muted-foreground">Last 7 days</p>
           </CardContent>
         </Card>
@@ -146,7 +237,7 @@ export function PromptsInsights() {
             <BarChart3 className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">75.3%</div>
+            <div className="text-2xl font-bold">{stats?.avgVisibility || 0}%</div>
             <p className="text-xs text-green-500">+3.8% from last week</p>
           </CardContent>
         </Card>
@@ -157,7 +248,7 @@ export function PromptsInsights() {
             <Calendar className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">2m ago</div>
+            <div className="text-2xl font-bold">{stats?.lastRun || 'Never'}</div>
             <p className="text-xs text-muted-foreground">Auto-execution</p>
           </CardContent>
         </Card>
@@ -189,9 +280,11 @@ export function PromptsInsights() {
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="all">All Topics</SelectItem>
-                  <SelectItem value="finance">Finance</SelectItem>
-                  <SelectItem value="investment">Investment</SelectItem>
-                  <SelectItem value="credit">Credit</SelectItem>
+                  {uniqueTopics.map(topic => (
+                    <SelectItem key={topic} value={topic}>
+                      {topic.charAt(0).toUpperCase() + topic.slice(1)}
+                    </SelectItem>
+                  ))}
                 </SelectContent>
               </Select>
               <Button>Run All</Button>
@@ -256,6 +349,7 @@ export function PromptsInsights() {
                             <TableHead>Platforms</TableHead>
                             <TableHead>Response Preview</TableHead>
                             <TableHead>Region</TableHead>
+                            <TableHead className="w-12">Actions</TableHead>
                           </TableRow>
                         </TableHeader>
                         <TableBody>
@@ -282,7 +376,7 @@ export function PromptsInsights() {
                                       className="text-lg"
                                       title={platform}
                                     >
-                                      {platformIcons[platform as keyof typeof platformIcons]}
+                                      {platformIcons[platform as keyof typeof platformIcons] || '❓'}
                                     </span>
                                   ))}
                                   {prompt.platforms.length === 0 && (
@@ -302,6 +396,37 @@ export function PromptsInsights() {
                               <TableCell>
                                 <Badge variant="outline">{prompt.region}</Badge>
                               </TableCell>
+                              <TableCell>
+                                <DropdownMenu>
+                                  <DropdownMenuTrigger asChild>
+                                    <Button 
+                                      variant="ghost" 
+                                      className="h-8 w-8 p-0"
+                                      disabled={actionLoading}
+                                    >
+                                      <span className="sr-only">Open menu</span>
+                                      <MoreHorizontal className="h-4 w-4" />
+                                    </Button>
+                                  </DropdownMenuTrigger>
+                                  <DropdownMenuContent align="end">
+                                    <DropdownMenuItem
+                                      onClick={() => handleEditPrompt(prompt.id)}
+                                      disabled={actionLoading}
+                                    >
+                                      <Edit className="mr-2 h-4 w-4" />
+                                      Edit
+                                    </DropdownMenuItem>
+                                    <DropdownMenuItem
+                                      onClick={() => handleDeletePrompt(prompt.id, prompt.text)}
+                                      disabled={actionLoading}
+                                      variant="destructive"
+                                    >
+                                      <Trash2 className="mr-2 h-4 w-4" />
+                                      Delete
+                                    </DropdownMenuItem>
+                                  </DropdownMenuContent>
+                                </DropdownMenu>
+                              </TableCell>
                             </TableRow>
                           ))}
                         </TableBody>
@@ -314,6 +439,52 @@ export function PromptsInsights() {
           </div>
         </CardContent>
       </Card>
+
+      {/* Edit Dialog */}
+      <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
+        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Edit Prompt</DialogTitle>
+            <DialogDescription>
+              Update the prompt information and settings.
+            </DialogDescription>
+          </DialogHeader>
+          {editingPrompt && (
+            <PromptForm
+              prompt={editingPrompt}
+              onSuccess={handleEditSuccess}
+              onCancel={handleEditCancel}
+            />
+          )}
+        </DialogContent>
+      </Dialog>
+
+      {/* Delete Confirmation Dialog */}
+      <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This action cannot be undone. This will permanently delete the prompt:
+              <br />
+              <br />
+              <span className="font-medium bg-muted p-2 rounded text-sm block max-w-full overflow-hidden text-ellipsis">
+                &quot;{deletingPrompt?.text.slice(0, 100)}{deletingPrompt?.text && deletingPrompt.text.length > 100 ? '...' : ''}&quot;
+              </span>
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={actionLoading}>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={confirmDeletePrompt}
+              disabled={actionLoading}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              {actionLoading ? 'Deleting...' : 'Delete'}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   )
 }

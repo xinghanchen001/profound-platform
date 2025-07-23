@@ -32,6 +32,7 @@ import {
   Settings,
   LogOut,
   User,
+  Link as LinkIcon,
 } from 'lucide-react'
 
 const navigationItems = [
@@ -45,6 +46,11 @@ const navigationItems = [
     title: "Answer Engine Insights",
     url: "/dashboard/insights",
     icon: Zap,
+  },
+  {
+    title: "Citations",
+    url: "/dashboard/citations",
+    icon: LinkIcon,
   },
   {
     title: "My Website",

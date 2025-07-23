@@ -95,6 +95,7 @@ export default function LoginPage() {
                         placeholder="Enter your password"
                         type="password"
                         disabled={isLoading}
+                        autoComplete="new-password"
                         {...field}
                       />
                     </FormControl>

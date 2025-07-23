@@ -141,6 +141,7 @@ export default function SignupPage() {
                         placeholder="Create a password"
                         type="password"
                         disabled={isLoading}
+                        autoComplete="new-password"
                         {...field}
                       />
                     </FormControl>
@@ -160,6 +161,7 @@ export default function SignupPage() {
                         placeholder="Confirm your password"
                         type="password"
                         disabled={isLoading}
+                        autoComplete="new-password"
                         {...field}
                       />
                     </FormControl>

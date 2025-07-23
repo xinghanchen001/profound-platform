@@ -4,7 +4,7 @@ import React, { useState, useEffect } from 'react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog'
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog'
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu'
 import { Input } from '@/components/ui/input'
 import { TopicForm } from './TopicForm'
@@ -152,6 +152,9 @@ export function TopicList() {
             <DialogContent>
               <DialogHeader>
                 <DialogTitle>Create New Topic</DialogTitle>
+                <DialogDescription>
+                  Create a new topic to organize your prompts. Topics help categorize and manage your prompt collections.
+                </DialogDescription>
               </DialogHeader>
               <TopicForm
                 onSuccess={handleCreateSuccess}
