@@ -108,7 +108,7 @@ export function CompetitorComparison() {
                   <TableCell>
                     <div className="flex items-center space-x-3">
                       <Avatar className="h-8 w-8">
-                        <AvatarImage src={competitor.logo} alt={competitor.name} />
+                        <AvatarImage src={competitor.logo || ''} alt={competitor.name} />
                         <AvatarFallback>
                           {competitor.owned ? (
                             <Building className="h-4 w-4" />
@@ -179,7 +179,8 @@ export function CompetitorComparison() {
         {platforms.map((platform) => {
           const color = platformColors[platform as keyof typeof platformColors]
           const topPerformer = competitors[0] // Your brand
-          const platformScore = getPlatformScores(topPerformer.visibility)[platform as keyof typeof platformScores]
+          const platformScores = getPlatformScores(topPerformer.visibility)
+          const platformScore = platformScores[platform as keyof typeof platformScores]
           
           return (
             <div key={platform} className="p-4 border rounded-lg space-y-3">

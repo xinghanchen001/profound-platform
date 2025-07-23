@@ -17,7 +17,11 @@ import { usePermissions } from '@/hooks/usePermissions'
 import type { Prompt, Topic } from '@/types/database'
 import { MoreHorizontal, Plus, Search, FileText, Play, Pause } from 'lucide-react'
 
-export function PromptList() {
+interface PromptListProps {
+  onRefresh?: () => void
+}
+
+export function PromptList({ onRefresh }: PromptListProps) {
   const [prompts, setPrompts] = useState<Prompt[]>([])
   const [topics, setTopics] = useState<Topic[]>([])
   const [loading, setLoading] = useState(true)
